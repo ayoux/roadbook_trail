@@ -1,24 +1,25 @@
 import numpy as np
 
-class TrailEngine:
-    def __init__(self, v_plat, coef_d_plus=10, coef_fatigue=0.0):
-        self.v_plat = v_plat  # km/h
-        self.coef_d_plus = coef_d_plus  # 100m D+ = X km effort
-        self.coef_fatigue = coef_fatigue # % de ralentissement par heure
+class RaceEngine:
+    """Calculateur de performance basé sur la pente et la fatigue."""
 
-    def compute_segment_time(self, distance_km, d_plus_m, cumulative_hours=0):
+    def __init__(self, v_base: float, fatigue_coef: float):
+        self.v_base = v_base  # Vitesse à plat (km/h)
+        self.fatigue_coef = fatigue_coef / 100
+
+    def tobler_speed(self, slope_pct: float) -> float:
         """
-        Calcule le temps pour un segment en tenant compte du km-effort
-        et de la fatigue accumulée.
+        Règle de Tobler modifiée pour le trail.
+        Retourne la vitesse ajustée selon la pente.
         """
-        # Formule de base : Km-effort
-        km_effort = distance_km + (max(0, d_plus_m) / 100)
-        
-        # Temps théorique sans fatigue
-        base_time = km_effort / self.v_plat
-        
-        # Application de la fatigue (linéaire pour la V1)
-        # On ralentit de X% par heure déjà passée
-        slowdown_factor = 1 + (self.coef_fatigue / 100 * cumulative_hours)
-        
-        return base_time * slowdown_factor
+        s = slope_pct / 100
+        # V = 6 * exp(-3.5 * |s + 0.05|) -> Version marche
+        # Adapté pour trail (v_base calée sur s=0)
+        adj = np.exp(-3.5 * abs(s + 0.05))
+        return self.v_base * (adj / 0.84) # Normalisation à plat
+
+    def estimate_segment_time(self, dist_km: float, slope: float, elapsed_h: float) -> float:
+        """Estime le temps avec impact de la fatigue cumulative."""
+        v_instant = self.tobler_speed(slope)
+        slowdown = 1 - (self.fatigue_coef * elapsed_h)
+        return dist_km / (max(v_instant * slowdown, 1.5)) # Vitesse mini 1.5km/h
