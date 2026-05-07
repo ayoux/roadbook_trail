@@ -63,3 +63,80 @@ if st.session_state.gpx_data is not None:
 
 else:
     st.warning("Veuillez uploader un fichier GPX pour commencer l'analyse.")
+
+# --- CONFIGURATION STRATÉGIE ---
+st.subheader("🍌 Stratégie & Roadbook Dynamique")
+
+# On récupère les params de la sidebar
+engine = RaceEngine(st.session_state.params['v_base'], st.session_state.params['fatigue'])
+nutri = NutritionPlanner(carbs_per_hour=60) # On pourrait mettre ces params en sidebar aussi
+
+# 1. Initialisation des points de passage (Waypoints)
+# Idéalement, ces points viennent de ton parser.py (waypoints du GPX)
+if 'df_roadbook' not in st.session_state:
+    st.session_state.df_roadbook = pd.DataFrame([
+        {"Point": "Départ", "KM": 0.0, "D+": 0, "Pause_min": 0, "Type": "Départ"},
+        {"Point": "Ravito 1", "KM": 15.0, "D+": 600, "Pause_min": 10, "Type": "Ravito"},
+        {"Point": "Sommet", "KM": 25.0, "D+": 1500, "Pause_min": 0, "Type": "Sommet"},
+        {"Point": "Arrivée", "KM": 42.0, "D+": 1800, "Pause_min": 0, "Type": "Arrivée"},
+    ])
+
+# 2. L'Éditeur interactif
+st.write("Modifier les points, distances ou temps de pause :")
+edited_df = st.data_editor(
+    st.session_state.df_roadbook, 
+    num_rows="dynamic", 
+    key="rb_editor"
+)
+
+# 3. MOTEUR DE RECALCUL DYNAMIQUE
+def calculate_itinerary(df):
+    results = []
+    current_time = datetime.combine(datetime.today(), datetime.min.time()) # T0 : 00:00
+    cumul_h = 0.0
+    
+    for i, row in df.iterrows():
+        if i == 0:
+            arrival = current_time
+            seg_time_h = 0
+        else:
+            # Calcul du segment précédent à celui-ci
+            dist_seg = row['KM'] - df.iloc[i-1]['KM']
+            # On simplifie la pente moyenne du segment pour la V2
+            dplus_seg = row['D+'] - df.iloc[i-1]['D+']
+            slope_avg = (dplus_seg / (dist_seg * 1000)) * 100 if dist_seg > 0 else 0
+            
+            # Appel au RaceEngine (Tobler + Fatigue)
+            seg_time_h = engine.estimate_segment_time(dist_seg, slope_avg, cumul_h)
+            arrival = current_time + timedelta(hours=seg_time_h)
+        
+        # Nutrition pour le segment à venir
+        # (On regarde la durée du segment suivant si possible, ou du segment actuel)
+        nutrition = nutri.get_needs(seg_time_h)
+        
+        results.append({
+            "Arrivée": arrival.strftime("%H:%M"),
+            "Durée Seg.": f"{int(seg_time_h)}h{int((seg_time_h%1)*60):02d}",
+            "Glucides (g)": nutrition['glucides_g'],
+            "Eau (ml)": nutrition['eau_ml']
+        })
+        
+        # Update pour le prochain point : Arrivée + Pause
+        current_time = arrival + timedelta(minutes=row['Pause_min'])
+        cumul_h += (seg_time_h + row['Pause_min']/60)
+
+    return pd.concat([df, pd.DataFrame(results)], axis=1)
+
+# Affichage du résultat recalculé
+final_df = calculate_itinerary(edited_df)
+st.table(final_df)
+
+# 4. LE BOUTON CREW (MODE ASSISTANCE)
+st.divider()
+if st.checkbox("🚀 Activer le Mode Crew (Assistance mobile)"):
+    st.info("Affichage optimisé pour le bord de route")
+    next_point = final_df.iloc[1] # Exemple : le prochain point
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Prochain Point", next_point['Point'])
+    c2.metric("Heure d'arrivée", next_point['Arrivée'])
+    c3.metric("À préparer", f"{next_point['Eau (ml)']}ml + {next_point['Glucides (g)']}g")
