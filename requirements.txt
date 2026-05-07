@@ -1,4 +1,8 @@
+streamlit
 gpxpy
 pandas
-plotly
 numpy
+plotly
+folium
+streamlit-folium
+scipy
