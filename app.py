@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from engine.parser import GPXProcessor
 from engine.calculator import RaceEngine
+from engine.strategy import NutritionPlanner
 from streamlit_folium import st_folium
 import folium
 
