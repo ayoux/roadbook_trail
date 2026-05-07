@@ -4,6 +4,7 @@ from engine.parser import GPXProcessor
 from engine.calculator import RaceEngine
 from engine.strategy import NutritionPlanner
 from streamlit_folium import st_folium
+from datetime import datetime, timedelta
 import folium
 
 st.set_page_config(page_title="Trail Commander V2", layout="wide")
