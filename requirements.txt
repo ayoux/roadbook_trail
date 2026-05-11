@@ -2,7 +2,7 @@ streamlit
 gpxpy
 pandas
 numpy
+scipy
 plotly
 folium
 streamlit-folium
-scipy
