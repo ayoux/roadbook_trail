@@ -141,7 +141,7 @@ if st.session_state.gpx_df is not None:
         })
         
         # Ajouter la pause pour le prochain segment
-        pause = int(row['Pause_min'])
+        pause = int(row['Pause_min']) if row['Pause_min'] is not None else 0
         current_dt += timedelta(minutes=pause)
         cumul_h += seg_time + (pause/60)
 
