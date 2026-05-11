@@ -177,7 +177,7 @@ def calculate_itinerary(df_waypoints, full_gpx_df):
     return pd.concat([df_waypoints.reset_index(drop=True), pd.DataFrame(results)], axis=1)
 
 # Affichage du résultat recalculé
-final_df = calculate_itinerary(edited_df)
+final_df = calculate_itinerary(edited_df, st.session_state.gpx_data)
 st.table(final_df)
 
 # 4. LE BOUTON CREW (MODE ASSISTANCE)
