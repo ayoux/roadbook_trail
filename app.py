@@ -170,8 +170,8 @@ def calculate_itinerary(df_waypoints, full_gpx_df):
         })
         
         # Mise à jour pour le point suivant (Arrivée + Pause)
-        current_time = arrival + timedelta(minutes=row['Pause_min'])
-        cumul_h += (seg_time_h + row['Pause_min']/60)
+        current_time = arrival + timedelta(minutes=int(row['Pause_min']))
+        cumul_h += (seg_time_h + float(row['Pause_min'])/60)
 
     # On combine les données saisies avec les résultats calculés
     return pd.concat([df_waypoints.reset_index(drop=True), pd.DataFrame(results)], axis=1)
