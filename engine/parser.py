@@ -42,10 +42,10 @@ class GPXProcessor:
         # Logique de calcul de distance entre points consécutifs ici...
     
     def get_segment_points(self, df: pd.DataFrame, start_km: float, end_km: float) -> pd.DataFrame:
-    """Extrait les points du DataFrame situés entre deux bornes kilométriques."""
-    mask = (df['cumul_dist'] >= start_km) & (df['cumul_dist'] <= end_km)
-    return df.loc[mask].copy()
-        # Pour rester concis, on simulera le cumul de distance
-        df['cumul_dist'] = np.linspace(0, 100, len(df)) # Exemple
-        df['pente'] = np.gradient(df['ele'], df['cumul_dist'] * 1000) * 100
-        return df
+        """Extrait les points du DataFrame situés entre deux bornes kilométriques."""
+        mask = (df['cumul_dist'] >= start_km) & (df['cumul_dist'] <= end_km)
+        return df.loc[mask].copy()
+            # Pour rester concis, on simulera le cumul de distance
+            df['cumul_dist'] = np.linspace(0, 100, len(df)) # Exemple
+            df['pente'] = np.gradient(df['ele'], df['cumul_dist'] * 1000) * 100
+            return df
